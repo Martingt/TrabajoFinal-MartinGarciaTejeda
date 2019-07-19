@@ -6,7 +6,6 @@ describe('Terminal window', () => {
     });
 
     it('Should show user name', () => {
-
     });
     
 });
