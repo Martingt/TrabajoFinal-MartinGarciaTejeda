@@ -1,0 +1,28 @@
+{
+  "name": "trabajofinal-martingarciatejeda",
+  "version": "1.0.0",
+  "description": "Trabajo final de Programacion Orientada a Objetos II",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "mocha tests/**/*spec.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Martingt/TrabajoFinal-MartinGarciaTejeda.git"
+  },
+  "author": "Martin Laureano Garcia Tejeda",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Martingt/TrabajoFinal-MartinGarciaTejeda/issues"
+  },
+  "homepage": "https://github.com/Martingt/TrabajoFinal-MartinGarciaTejeda#readme",
+  "dependencies": {
+    "@types/mocha": "^5.2.7",
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
+    "prompt": "^1.0.0"
+  }
+}
