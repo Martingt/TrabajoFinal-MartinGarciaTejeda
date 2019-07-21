@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha tests/**/*spec.ts"
+    "test": "mocha tests/*spec.js"
   },
   "repository": {
     "type": "git",
