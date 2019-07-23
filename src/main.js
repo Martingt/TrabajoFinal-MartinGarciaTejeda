@@ -2,10 +2,8 @@ var prompt = require('prompt');
 const {TerminalWindow, Directory, DataBase, User, isUserNameValid} = require('../src/model');
 const uuidV1 = require('uuid/v1');
 
-let dataBase
-    let terminal;
-    
-    dataBase = new DataBase();
+let terminal;
+    let dataBase = new DataBase();
     dataBase.createUser('martin', 'Martinlgt1');
     dataBase.createUser('pedro123', 'pedro1');
     dataBase.createUser('juan1234', 'juan1');
@@ -15,20 +13,37 @@ let dataBase
     let pedro = dataBase.getUsers().get('pedro123');
     let juan = dataBase.getUsers().get('juan1234');
     let lucas = dataBase.getUsers().get('lucas1234');
-    let root = new Directory('/', rootUser);
-    let autos = new Directory('autos', pedro);
-    let series = new Directory('series', juan);
-    let peugeot = new Directory('peugeot', lucas);
+    let root = new Directory('/', null, null);
+    let autos = new Directory('autos', pedro, root);
+    let series = new Directory('series', juan, root);
+    let peugeot = new Directory('peugeot', lucas, autos);
     root.addDirectory(autos);
     root.addDirectory(series);
     autos.addDirectory(peugeot);
 
-    terminal = new TerminalWindow(rootUser, root, dataBase); 
-
+    terminal = new TerminalWindow(rootUser, root, dataBase);
     terminal.loginAs('martin', 'Martinlgt1');
+    terminal.createFile('Argentina');
+    console.log(terminal.getWorkingDirectory());
+    console.log(terminal.getFile('Argentina'));
+    // console.log(terminal.isRootUserOnTerminalOrIsUserOwnerOf(terminal.getFolder('autos'))) ;
+    // console.log(terminal.getFolder('autos').getPermissions());
+    // terminal.chmodFolder('autos', '+r', '+w');
+    // console.log(terminal.getFolder('autos').getPermissions());
+    // // console.log(terminal.getWorkingDirectory());
 
-    console.log(terminal.getUser());
-    console.log(martin);
+    
+    // console.log(terminal.getWorkingDirectory());
+    // terminal.rmdir('series');
+    // console.log(terminal.getWorkingDirectory());
+    // terminal.cd('autos');
+    // console.log(terminal.getWorkingDirectory().getDirectoryParent());
+        // terminal.cd('..');
+        // console.log(terminal.ls());
+    //     console.log(autos.getDirectoryParent());
+    // console.log(terminal);
+//     console.log(terminal.getWorkingDirectory());
+//    console.log(martin);
         
 //   readline.question(`What's your name?`, (name) => {
 //     console.log(`Hi ${name}!`)
@@ -37,10 +52,15 @@ let dataBase
 
 // console.log(uuidV1());
 
-// let map = new Map();
-// //let caca = [1 : 'pepe'};
+let map = new Map();
+
+//let caca = [1 : 'pepe'};
 // map.set(1,'pepe');
 // map.set('hi','choto');
+// map.values()
+// for(d of map) {
+//     d.
+// }
 
 // // while('./exit') {
 
