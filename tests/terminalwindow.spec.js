@@ -54,31 +54,29 @@ describe('Data base', () => {
 });
 describe('Terminal window', () => {
     let terminal;
-    let dataBase = new DataBase();
-    dataBase.createUser('martin', 'Martinlgt1');
-    dataBase.createUser('pedro123', 'pedro1');
-    dataBase.createUser('juan1234', 'juan1');
-    dataBase.createUser('lucas1234', 'lucas');
-    let rootUser = dataBase.getUsers().get('root')
-    let martin = dataBase.getUsers().get('martin');
-    let pedro = dataBase.getUsers().get('pedro123');
-    let juan = dataBase.getUsers().get('juan1234');
-    let lucas = dataBase.getUsers().get('lucas1234');
-    let root = new Directory('/', rootUser);
-    let autos = new Directory('autos', pedro);
-    let series = new Directory('series', juan);
-    let peugeot = new Directory('peugeot', lucas);
-    root.addDirectory(autos);
-    root.addDirectory(series);
-    autos.addDirectory(peugeot);
-
-    beforeEach(() => {  
+    beforeEach(() => {
+        let dataBase = new DataBase();
+        dataBase.createUser('martin', 'Martinlgt1');
+        dataBase.createUser('pedro123', 'pedro1');
+        dataBase.createUser('juan1234', 'juan1');
+        dataBase.createUser('lucas1234', 'lucas');
+        let rootUser = dataBase.getUsers().get('root')
+        let martin = dataBase.getUsers().get('martin');
+        let pedro = dataBase.getUsers().get('pedro123');
+        let juan = dataBase.getUsers().get('juan1234');
+        let lucas = dataBase.getUsers().get('lucas1234');
+        let root = new Directory('/', null, null);
+        let autos = new Directory('autos', pedro, root);
+        let series = new Directory('series', juan, root);
+        let peugeot = new Directory('peugeot', lucas, autos);
+        root.addDirectory(autos);
+        root.addDirectory(series);
+        autos.addDirectory(peugeot);
         terminal = new TerminalWindow(rootUser, root, dataBase); 
     });
     it('Should show Martin as user login', () => {
         terminal.loginAs('martin', 'Martinlgt1');
-        expect(terminal.getUser()).equal(martin);
-        expect(terminal.getUserName()).equal('martin');
+        expect(terminal.getUser().getName()).equal('martin');
     });
     it('Should show the user on the root directory', () => {
         expect(terminal.printWorkingDirectory()).equal('/');
@@ -90,6 +88,81 @@ describe('Terminal window', () => {
     it('Should create a user by the root', () => {
         expect(terminal.getUser().createUser('messi_barsa', 'barcelona', terminal.getDB())).equal('El usuario messi_barsa ha sido creado');
     })
+    it('Should move from / to autos', () => {
+        terminal.cd('autos');
+        expect(terminal.printWorkingDirectory()).equal('autos');
+    });
+    it('Should move from autos to / when cd .. command it is sent', () => {
+        terminal.cd('autos');
+        terminal.cd('..');
+        expect(terminal.printWorkingDirectory()).equal('/');
+    });
+    it('Should not allow the user named martin delete autos folder without permissions', () => {
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.rmdir('autos')).equal('You do not have permissions to remove autos folder');
+    });
+    it('Should allow the root user delete autos folder', () => {
+        expect(terminal.rmdir('autos')).equal('autos has been removed');
+    });
+    it('Should allow delete autos folder by the owner', () => {
+        terminal.loginAs('pedro123', 'pedro1');
+        expect(terminal.rmdir('autos')).equal('autos has been removed');
+    });
+    it('Should change folder permission by the rooter and allow martin to delete it', () => {
+        terminal.chmodFolder('autos', '+r', '+w');
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.rmdir('autos')).equal('autos has been removed');
+
+    });
+    it('Should change folder permission by the owner and allow martin to delete it', () => {
+        terminal.loginAs('pedro123', 'pedro1');
+        terminal.chmodFolder('autos', '+r', '+w');
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.rmdir('autos')).equal('autos has been removed');
+
+    });
+    it('Should not allow change autos folder permission by martin', () => {
+        terminal.loginAs('martin', 'Martinlgt1');
+        terminal.chmodFolder('autos', '+r', '+w');
+        expect(terminal.rmdir('autos')).equal('You do not have permissions to remove autos folder');
+
+    });
+    it('Should martin create a folder named Musica and be the owner', () => {
+        terminal.loginAs('martin', 'Martinlgt1');
+        terminal.createFolder('Musica')
+        expect(terminal.getFolder('Musica').wasCreatedBy(terminal.getUser())).is.true;
+
+    });
+    it('Should martin create a folder named Musica and be the owner', () => {
+        terminal.loginAs('martin', 'Martinlgt1');
+        terminal.createFolder('Musica')
+        expect(terminal.getFolder('Musica').wasCreatedBy(terminal.getUser())).is.true;
+
+    });
+    it('Should allow martin create a file named Argentina', () => {
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.createFile('Argentina')).equal('Argentina file has been created');
+    });
+    it('Should not allow martin create a file named Argentina without permissions', () => {
+        terminal.loginAs('martin', 'Martinlgt1');
+        terminal.cd('autos');
+        expect(terminal.createFile('Argentina')).equal('You do not have permissions to create Argentina file');
+    });
+    it('Should not allow pedro delete a file named Argentina without permissions', () => {
+        terminal.loginAs('martin', 'Martinlgt1');
+        terminal.createFile('Argentina')
+        terminal.loginAs('pedro123', 'pedro1');
+        expect(terminal.rm('Argentina')).equal('You do not have permissions to remove Argentina file');
+    });
+    it('Should  allow martin delete a file named Argentina', () => {
+        terminal.loginAs('martin', 'Martinlgt1');
+        terminal.createFile('Argentina')
+        expect(terminal.rm('Argentina')).equal('Argentina file has been removed');
+    });
+
+
+
+
 });
 describe('Directory description', () => {
     let directory;
