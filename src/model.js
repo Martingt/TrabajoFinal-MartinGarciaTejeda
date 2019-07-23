@@ -120,9 +120,11 @@ class TerminalWindow {
 
     createFolder(folderName) {
         if(this.userHasPermissionToWriteOn(this.getWorkingDirectory())) {
-        let folder = new Directory(folderName, this.getUser(), this.getWorkingDirectory());
-        this.getWorkingDirectory().addDirectory(folder);
+            let folder = new Directory(folderName, this.getUser(), this.getWorkingDirectory());
+            this.getWorkingDirectory().addDirectory(folder);
+            return folderName+' folder has been created';
         }
+        return 'You do not have permissions to create '+folderName+' folder';
     }
 
     createFile(fileName) {
@@ -531,9 +533,9 @@ class DataBase {
         let isUserNameValidOutput = isUserNameValid(userName);
         if(!this.users.has(userName) && isUserNameValidOutput) {
             this.users.set(userName, new RegularUser(userName, password));
-            return 'El usuario '+userName+' ha sido creado';
+            return 'The user '+userName+' has been created';
         }
-        return 'No se ha podido crear el usuario porque '+(isUserNameValidOutput ? 'ya existe' : 'el nombre no es valido');
+        return 'The user could not be created because '+(isUserNameValidOutput ? 'it is already existed' : 'the name is not valid');
     }
 
     getUsers() {

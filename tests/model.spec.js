@@ -88,7 +88,7 @@ describe('Terminal window', () => {
         expect(terminal.ls()).equal('\nautos\nseries\nMovies'+'\n');
     });
     it('Should create a user by the root', () => {
-        expect(terminal.getUser().createUser('messi_barsa', 'barcelona', terminal.getDB())).equal('El usuario messi_barsa ha sido creado');
+        expect(terminal.getUser().createUser('messi_barsa', 'barcelona', terminal.getDB())).equal('The user messi_barsa has been created');
     })
     it('Should move from / to autos', () => {
         terminal.cd('autos');
