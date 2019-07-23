@@ -1,9 +1,5 @@
 const {TerminalWindow, Directory, User, DataBase} = require('../src/model');
-const {expect, assert} = require('chai');
-
-// var expect = require('chai').expect;
-// var assert = require('chai').assert;
-// var should = require('chai').should();
+const {expect} = require('chai');
 
 describe('Data base', () => {
     let db;
@@ -78,12 +74,18 @@ describe('Terminal window', () => {
         terminal.loginAs('martin', 'Martinlgt1');
         expect(terminal.getUser().getName()).equal('martin');
     });
+    it('Should move the user to the root when they login in', () => {
+        terminal.cd('autos');
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.printWorkingDirectory()).equal('/');
+    });
+
     it('Should show the user on the root directory', () => {
         expect(terminal.printWorkingDirectory()).equal('/');
     });
     it('Should create a folder named Movies owned by the user', () => {
         terminal.createFolder('Movies');
-        expect(terminal.ls()).equal('autos\nseries\nMovies'+'\n');
+        expect(terminal.ls()).equal('\nautos\nseries\nMovies'+'\n');
     });
     it('Should create a user by the root', () => {
         expect(terminal.getUser().createUser('messi_barsa', 'barcelona', terminal.getDB())).equal('El usuario messi_barsa ha sido creado');
@@ -92,9 +94,28 @@ describe('Terminal window', () => {
         terminal.cd('autos');
         expect(terminal.printWorkingDirectory()).equal('autos');
     });
+    it('Should move from / to peugeot', () => {
+        terminal.cd('autos/peugeot');
+        expect(terminal.printWorkingDirectory()).equal('peugeot');
+    });
+    it('Should move from peugeot to autos', () => {
+        terminal.cd('autos/peugeot');
+        terminal.cd('/autos');
+        expect(terminal.printWorkingDirectory()).equal('autos');
+    });
+    it('Should move from peugeot to the root', () => {
+        terminal.cd('autos/peugeot');
+        terminal.cd('/');
+        expect(terminal.printWorkingDirectory()).equal('/');
+    });
     it('Should move from autos to / when cd .. command it is sent', () => {
         terminal.cd('autos');
         terminal.cd('..');
+        expect(terminal.printWorkingDirectory()).equal('/');
+    });
+    it('Should show if a path is invalid', () => {
+        expect(terminal.cd('bjkdbkjdsbkjads / daads ')).equal('It does not exist bjkdbkjdsbkjads ');
+      
         expect(terminal.printWorkingDirectory()).equal('/');
     });
     it('Should not allow the user named martin delete autos folder without permissions', () => {
@@ -159,10 +180,48 @@ describe('Terminal window', () => {
         terminal.createFile('Argentina')
         expect(terminal.rm('Argentina')).equal('Argentina file has been removed');
     });
+    it('Should change file permission by the rooter and allow martin to delete it', () => {
+        terminal.createFile('gatos');
+        terminal.chmodFile('gatos', '+r', '+w', '-x');
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.rm('gatos')).equal('gatos file has been removed');
 
+    });
+    it('Should change file permission by the owner and allow martin to delete it', () => {
+        terminal.loginAs('pedro123', 'pedro1');
+        terminal.createFile('gatos');
+        terminal.chmodFile('gatos', '+r', '+w', '-x');
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.rm('gatos')).equal('gatos file has been removed');
 
-
-
+    });
+    it('Should not allow change gatos file permission by martin', () => {
+        terminal.loginAs('pedro123', 'pedro1');
+        expect(terminal.createFile('gatos')).equal('gatos file has been created');
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.chmodFile('gatos', '+r', '+w')).equal('You do not have permissions');
+    });
+    it('Should martin write on series file', () => {
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.createFile('series')).equal('series file has been created');
+        terminal.writeOn('series', 'La casa de papel');
+        expect(terminal.read('series')).equal('La casa de papel');
+    });
+    it('Should not allow martin write on amigos file', () => {
+        expect(terminal.createFile('amigos')).equal('amigos file has been created');
+        terminal.writeOn('amigos', 'amigos del root');
+        terminal.loginAs('martin', 'Martinlgt1');
+        expect(terminal.writeOn('amigos', 'Seba, etc')).equal('You do not have permissions to write on amigos file');
+        expect(terminal.read('amigos')).equal('amigos del root');
+    });
+    it('Should allow martin write on amigos file', () => {
+        expect(terminal.createFile('amigos')).equal('amigos file has been created');
+        terminal.writeOn('amigos', 'amigos del root');
+        terminal.chmodFile('amigos', '+r', '+w', '+x');
+        terminal.loginAs('martin', 'Martinlgt1');
+        terminal.writeOn('amigos', 'Seba, etc');
+        expect(terminal.read('amigos')).equal('Seba, etc');
+    });
 });
 describe('Directory description', () => {
     let directory;
