@@ -1,10 +1,89 @@
 const uuidV1 = require('uuid/v1');
 
+class Controller {
+    constructor(terminal) {
+        this.terminal = terminal;
+    }
+
+    input(answer) {
+        let answerSplited = answer.split(' ');
+        if(answerSplited[0] == 'write') {
+            let text = '';
+            for(let i = 2; i < answerSplited.length; i++) {
+                text = text + ' ' + answerSplited[i];
+                
+            }
+           
+            return this.terminal.writeOn(answerSplited[1], text);
+        }
+        if(answerSplited.length == 1) {
+            switch(answerSplited[0]) {
+                case 'ls':
+                    return this.terminal.ls();
+                case 'exit':
+                    return 'Good bye!';
+                default:
+                    return 'Command not found';
+            }
+        }
+        else if(answerSplited.length == 2) {
+            switch(answerSplited[0]) {
+                case 'cd':
+                    this.terminal.cd(answerSplited[1]);
+                    return '';
+                case 'create':
+                    return this.terminal.createFile(answerSplited[1]);
+                case 'cat':
+                    return this.terminal.read(answerSplited[1]);
+                case 'mkdir':
+                        return this.terminal.createFolder(answerSplited[1]);
+                case 'rm':
+                        return this.terminal.rm(answerSplited[1]);
+                case 'rmdir':
+                        return this.terminal.rmdir(answerSplited[1]);
+                default:
+                    return 'Command not found';   
+            }
+        } 
+        else if(answerSplited.length == 3) {
+            switch(answerSplited[0]) {
+                case 'login':
+                    return this.terminal.loginAs(answerSplited[1], answerSplited[2]);
+                case 'newUser':
+                    return this.terminal.createUser(answerSplited[1], answerSplited[2]);
+                default:
+                    return 'Command not found';
+
+            }
+        }
+        else if(answerSplited.length == 4) {
+            if(answerSplited[0] == 'chmod') {
+                return this.terminal.chmodFile(answerSplited[1], answerSplited[2], answerSplited[3]);
+            }
+        }
+        else if(answerSplited.length == 5) {
+            if(answerSplited[0] == 'chmod') {
+                return this.terminal.chmodFile(answerSplited[1], answerSplited[2], answerSplited[3], answerSplited[4]);
+            }
+        }
+        return 'Command not found';
+    }
+}
+
 class TerminalWindow {
     constructor(user, root, db) {
         this.user = user;
         this.workingDirectory = root;
+        this.root = root;
         this.db = db;
+    }
+
+    createUser(userName, password) {
+        if(this.isRootUserOnTerminal()){
+            return this.db.createUser(userName, password);
+        } else {
+            return 'You can not create users';
+        }
     }
 
     getDB() {
@@ -16,7 +95,8 @@ class TerminalWindow {
             let user = this.getDB().getUsers().get(userName);
             if(user.getPassword() == password) {
                 this.user = user;
-                return;
+                this.workingDirectory = this.root;
+                return '';
             }
             return 'Wrong password';
         }
@@ -57,11 +137,11 @@ class TerminalWindow {
     ls() {
         let directories = this.getWorkingDirectory().getSubdirectories();
         let files = this.getWorkingDirectory().getFiles();
-        let output = '';
+        let output = '\n';
         for(let directory of directories.values()) {
             output = output + directory.getName() + '\n';
         }
-        for(files of files) {
+        for(let file of files.values()) {
             output = output + file.getName() + '\n';
         }
         return output;
@@ -72,11 +152,55 @@ class TerminalWindow {
             let directory = this.getWorkingDirectory().getDirectoryParent();
             if(directory != null) {
                 this.workingDirectory = directory;
-
             }
         } else {
-            this.workingDirectory = this.workingDirectory.getDirectory(folderName);
+            let folders = folderName.split('/');
+            let workingDirectoryBackup = this.getWorkingDirectory();
+            if(folders[0] == '') { 
+                folders.shift();
+                this.workingDirectory = this.root;
+            }
+            if(folders[0] != '') {
+                for(let folder of folders) {
+                    if(this.isFolderExist(folder)) {
+                        let directory = this.getFolder(folder);
+                        if(this.userHasPermissionToReadOn(directory)) {
+                            this.workingDirectory = directory;
+                        } else {
+                            this.workingDirectory = workingDirectoryBackup;
+                            return 'You do not have permissions to access '+folder+' folder';
+                        }
+                    } else {
+                        this.workingDirectory = workingDirectoryBackup;
+                        return 'It does not exist '+folder;
+                    }
+                }
+            }
         }
+    }
+
+    writeOn(fileName, text) {
+        if(this.isFileExist(fileName)) {
+            let file = this.getFile(fileName);
+            if(this.userHasPermissionToWriteOn(file)) {
+                this.getWorkingDirectory().getFiles().get(fileName).setContent(text);
+                return fileName+' file content is '+text;
+            }
+            return 'You do not have permissions to write on '+fileName+' file';
+        }
+        return 'It does not exist '+fileName;
+    }
+
+
+    read(fileName) {
+        if(this.isFileExist(fileName)) {
+            let file = this.getFile(fileName);
+            if(this.userHasPermissionToReadOn(file)) {
+                return this.getWorkingDirectory().getFiles().get(fileName).getContent();
+            }
+            return 'You do not have permissions to read '+fileName+' file';
+        }
+        return 'It does not exist '+fileName;
     }
 
     rm(fileName) {
@@ -89,7 +213,6 @@ class TerminalWindow {
             return 'You do not have permissions to remove '+fileName+' file';
         }
         return 'It does not exist '+fileName;
-
     }
 
     rmdir(folderName) {
@@ -111,6 +234,13 @@ class TerminalWindow {
         return false;
     }
 
+    userHasPermissionToReadOn(archive) {
+        if(this.isRootUserOnTerminalOrIsUserOwnerOf(archive) || this.isAllUsersAllowedToReadOn(archive)) {
+            return true;
+        } 
+        return false;
+    }
+
 
     isRootUserOnTerminalOrIsUserOwnerOf(archive) {
         if(this.isRootUserOnTerminal() || this.isUserOwnerOf(archive)) {
@@ -125,6 +255,10 @@ class TerminalWindow {
 
     isAllUsersAllowedToWriteOn(archive) {
         return archive.getPermissions().getWritePermissionForAllUsers();
+    }
+
+    isAllUsersAllowedToReadOn(archive) {
+        return archive.getPermissions().getReadPermissionForAllUsers();
     }
 
     isUserOwnerOf(arhive) {
@@ -246,6 +380,15 @@ class File {
         this.uuid = uuidV1();
         this.permissions = new FilePermissions(true, false);
         this.user = user;
+        this.content = '';
+    }
+
+    getContent() {
+        return this.content;
+    }
+
+    setContent(text) {
+        this.content = text;
     }
 
     getOwnerName() {
@@ -356,9 +499,8 @@ class User {
     isNamed(name) {
         return this.name == name;
     }
-
-    
 }
+
 class RootUser extends User {
     constructor(name, password) {
         super(name, password);
@@ -367,8 +509,8 @@ class RootUser extends User {
     createUser(userName, password, db) {
         return db.createUser(userName, password);
     }
-
 }
+
 class RegularUser extends User {
     constructor(name, password) {
         super(name, password);
@@ -420,5 +562,6 @@ module.exports = {
     Directory,
     User,
     DataBase,
-    isUserNameValid
+    isUserNameValid,
+    Controller
 };
